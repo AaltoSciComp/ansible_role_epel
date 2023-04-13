@@ -1,0 +1,5 @@
+---
+# ansible-galaxy collection install community.general
+collections:
+# - name: community.general
+ - community.general

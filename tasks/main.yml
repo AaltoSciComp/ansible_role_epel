@@ -1,0 +1,19 @@
+---
+# tasks file for ansible_role_epel
+
+# subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+#- name: Enable codeready builder
+#  #community.general.rhsm_repository:
+#  #    name: codeready-builder-for-rhel-9-x86_64-rpms
+#  #    state: enabled
+#  ansible.builtin.command: dnf config-manager --set-enabled codeready-builder-for-rhel-9-x86_64-rpms
+      
+- name: Import a key for dl.fedoraproject.org
+  ansible.builtin.rpm_key:
+      state: present
+      key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
+
+- name: Install Epel-release
+  ansible.builtin.dnf:
+      name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+      state: present

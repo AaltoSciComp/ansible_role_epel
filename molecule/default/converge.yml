@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include aaltoscicomp.ansible_role_epel"
+      include_role:
+        name: "aaltoscicomp.ansible_role_epel"
