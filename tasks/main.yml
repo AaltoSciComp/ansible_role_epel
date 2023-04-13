@@ -1,12 +1,18 @@
 ---
 # tasks file for ansible_role_epel
 
+- name: Check if we are in a container ( /run/secrets )
+  stat:
+    path: /run/secrets
+  register: in_container
+
 # subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
-#- name: Enable codeready builder
-#  #community.general.rhsm_repository:
-#  #    name: codeready-builder-for-rhel-9-x86_64-rpms
-#  #    state: enabled
-#  ansible.builtin.command: dnf config-manager --set-enabled codeready-builder-for-rhel-9-x86_64-rpms
+- name: Enable codeready builder
+  community.general.rhsm_repository:
+      name: codeready-builder-for-rhel-9-x86_64-rpms
+      state: enabled
+  #ansible.builtin.command: dnf config-manager --set-enabled codeready-builder-for-rhel-9-x86_64-rpms
+  when: not in_container.stat.exists
       
 - name: Import a key for dl.fedoraproject.org
   ansible.builtin.rpm_key:
