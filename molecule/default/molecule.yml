@@ -2,12 +2,14 @@
 dependency:
   name: galaxy
   options:
-#    collections-file: collections.yml
     requirements-file: requirements.yml
 driver:
-  name: docker
+  name: podman
 platforms:
-  - name: instance
+  - name: instance-rocky
+    image: docker.io/rockylinux/rockylinux:9.1
+    pre_build_image: true
+  - name: instance-rh
     image: registry.access.redhat.com/ubi9/ubi
     pre_build_image: true
 provisioner:

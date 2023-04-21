@@ -6,14 +6,40 @@
     path: /run/secrets
   register: in_container
 
+- name: Check if we are running rhel
+  lineinfile:
+    path: /etc/os-release
+    line: 'ID="rhel"'
+    state: present
+  check_mode: yes
+  register: rhel_presence
+#  failed_when: rhel_presence is changed 
+
+- name: Print return information from the previous task
+  ansible.builtin.debug:
+    var: rhel_presence
+#    verbosity: 2
+
 # subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
-- name: Enable codeready builder
+- name: Enable codeready builder (RHEL)
   community.general.rhsm_repository:
       name: codeready-builder-for-rhel-9-x86_64-rpms
       state: enabled
   #ansible.builtin.command: dnf config-manager --set-enabled codeready-builder-for-rhel-9-x86_64-rpms
-  when: not in_container.stat.exists
-      
+  when: not in_container.stat.exists and not rhel_presence.changed
+
+
+- name: Install dnf config-manager (rocky)
+  #dnf install 'dnf-command(config-manager)'
+  ansible.builtin.dnf:
+      name: 'dnf-command(config-manager)'
+      state: present
+  when: rhel_presence.changed
+
+- name: Enable codeready builder (rocky)
+  ansible.builtin.shell: dnf config-manager --set-enabled crb
+  when: rhel_presence.changed
+
 - name: Import a key for dl.fedoraproject.org
   ansible.builtin.rpm_key:
       state: present
