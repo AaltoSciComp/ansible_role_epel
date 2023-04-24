@@ -1,10 +1,27 @@
 ---
 # tasks file for ansible_role_epel
 
+- name: List enabled repositories (to know if epel is already enabled)
+  ansible.builtin.shell: dnf repolist --enabled
+  register: repolist
+
+- name: Print return information from the previous task
+  ansible.builtin.debug:
+    var: repolist.stdout_lines
+    verbosity: 2
+
+- name: Print a message if epel needs to be installed.
+  ansible.builtin.debug:
+    msg: "Epel is not enabled. Installing it."
+    verbosity: 2
+  when: repolist.stdout_lines is not regex("epel")
+
+
 - name: Check if we are in a container ( /run/secrets )
   stat:
     path: /run/secrets
   register: in_container
+  when: repolist.stdout_lines is not regex("epel")
 
 - name: Check if we are running rhel
   lineinfile:
@@ -13,12 +30,13 @@
     state: present
   check_mode: yes
   register: rhel_presence
-#  failed_when: rhel_presence is changed 
+#  failed_when: rhel_presence is changed
+  when: repolist.stdout_lines is not regex("epel")
 
 - name: Print return information from the previous task
   ansible.builtin.debug:
     var: rhel_presence
-#    verbosity: 2
+    verbosity: 2
 
 # subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
 - name: Enable codeready builder (RHEL)
@@ -26,7 +44,7 @@
       name: codeready-builder-for-rhel-9-x86_64-rpms
       state: enabled
   #ansible.builtin.command: dnf config-manager --set-enabled codeready-builder-for-rhel-9-x86_64-rpms
-  when: not in_container.stat.exists and not rhel_presence.changed
+  when: repolist.stdout_lines is not regex("epel") and not in_container.stat.exists and not rhel_presence.changed
 
 
 - name: Install dnf config-manager (rocky)
@@ -34,18 +52,20 @@
   ansible.builtin.dnf:
       name: 'dnf-command(config-manager)'
       state: present
-  when: rhel_presence.changed
+  when: repolist.stdout_lines is not regex("epel") and rhel_presence.changed
 
 - name: Enable codeready builder (rocky)
   ansible.builtin.shell: dnf config-manager --set-enabled crb
-  when: rhel_presence.changed
+  when: repolist.stdout_lines is not regex("epel") and rhel_presence.changed
 
 - name: Import a key for dl.fedoraproject.org
   ansible.builtin.rpm_key:
       state: present
       key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
+  when: repolist.stdout_lines is not regex("epel")
 
 - name: Install Epel-release
   ansible.builtin.dnf:
       name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
       state: present
+  when: repolist.stdout_lines is not regex("epel")
